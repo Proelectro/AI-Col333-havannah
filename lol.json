@@ -1,0 +1,10 @@
+{
+    "move": null,
+    "player": 1,
+    "score": 10,
+    "children": [
+        "{\"move\": [0, 0], \"player\": 2, \"score\": 10, \"children\": []}",
+        "{\"move\": [0, 3], \"player\": 2, \"score\": 10, \"children\": []}",
+        "{\"move\": [0, 6], \"player\": 2, \"score\": 10, \"children\": []}"
+    ]
+}
