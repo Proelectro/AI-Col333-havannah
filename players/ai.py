@@ -375,7 +375,7 @@ class AIPlayer:
         if fetch_remaining_time(self.timer, self.player_number) < 60:
             self.root.update(state, [])  
         elif dim == 7:
-            self.root.update(state, [300, 300])
+            self.root.update(state, [300])
         else:
             self.root.update(state, [300])    
         # ------------------------------------------
