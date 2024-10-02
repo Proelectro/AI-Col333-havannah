@@ -13,27 +13,5 @@
 Player 1 Type: ai
 Player 2 Type: human
 {"player": 1, "move": [0, 1]}
-{"player": 2, "move": [7, 2]}
-{"player": 1, "move": [4, 0]}
-{"player": 2, "move": [8, 4]}
-{"player": 1, "move": [9, 6]}
-{"player": 2, "move": [9, 4]}
-{"player": 1, "move": [10, 5]}
-{"player": 2, "move": [7, 3]}
-{"player": 1, "move": [0, 0]}
-{"player": 2, "move": [6, 1]}
-{"player": 1, "move": [5, 0]}
-{"player": 2, "move": [8, 5]}
-{"player": 1, "move": [3, 1]}
-{"player": 2, "move": [7, 4]}
-{"player": 1, "move": [1, 0]}
-{"player": 2, "move": [6, 5]}
-{"player": 1, "move": [3, 0]}
-{"player": 2, "move": [2, 0]}
-{"player": 1, "move": [2, 1]}
-Game Over
-Winner: Player 1
-Structure Formed: bridge
-Winning Path: [(2, 1), (5, 0), (4, 0), (3, 0), (3, 1), (0, 0), (1, 0)]
-Player 1 Time Remaining: 598.5728149414062 s
-Player 2 Time Remaining: 589.5216674804688 s
+{"player": 2, "move": [4, 4]}
+{"player": 1, "move": [0, 6]}

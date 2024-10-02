@@ -17,14 +17,11 @@ dim = None
 BRANCH = 5
 
 def check_neighbours(pos1, pos2):
-    if pos1[0] == pos2[0] or pos1[1] == pos2[1]:
-        return True
-    siz = dim//2
-    if pos1 > pos2:
-        pos1, pos2 = pos2, pos1
-    if (pos1[1] < siz) ^ (pos2[1] + 1 == pos1[1]):
-        return True
+    for nb in get_neighbours(dim, pos1):
+        if nb == pos2:
+            return True
     return False
+
 
 
 def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
@@ -32,7 +29,6 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
         return 0
     if check_win(state, move, player)[0]:
         return float("inf") if player == 1 else -float("inf")
-    distance = np.zeros((dim, dim))
     visited = np.zeros((dim, dim))
     indx = 0
     for check in [player, 3 - player]:
@@ -87,7 +83,7 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
     score = [0] * (indx + 1)
     ring_score = [0] * (indx + 1)
     metagraph = defaultdict(lambda: float("inf"))
-    def check_safe(node):
+    def check_safe(i, node):
         for nb1 in get_neighbours(dim, node):
             if nb1 not in ring_set:
                 continue
@@ -95,6 +91,8 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
                 if nb1 == nb2 or check_neighbours(nb1, nb2):
                     continue
                 if nb2 not in ring_set:
+                    continue
+                if sum(state[q] == owner[i] for q in [node, nb1, nb2]) < 2:
                     continue
                 return True
         return False
@@ -150,14 +148,13 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
         priority = list(ring_set)
         while priority:
             node = priority.pop()
-            if node in ring_set and not check_safe(node):
+            if node in ring_set and not check_safe(i, node):
                 ring_set.remove(node)
                 priority.extend(get_neighbours(dim, node))
     
         if ring_set:
             if len(ring_set) > 5:
-                
-                ring_score[i] += 3000 - 50 * sum(1 for node in ring_set if state[node] == 0) ** 2
+                ring_score[i] += 3000 - 100 * sum(1 for node in ring_set if state[node] == 0) ** 2
     # print(" ------------------- ")
     # print(corner_list)
     # print(edges_list)
@@ -169,7 +166,7 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
         cl = len(corner_list[i])
         el = len(edges_list[i])
         score[i] -= 100
-        # score[i] += ring_score[i]
+        score[i] += ring_score[i]
         if cz >= 2 or ez >= 3:
             conn_comp = 0
             visi = set()
@@ -354,7 +351,7 @@ class AIPlayer:
             top:Node = leaf.pop()
             
             # and apply any condition to expand the leaf node
-            if (top.move_number - self.root.move_number) < 1 and abs(top.static_score) != float("inf"):
+            if (top.move_number - self.root.move_number) < 2 and abs(top.static_score) != float("inf"):
                 # expand the give leaf (top)
                 new_state = deepcopy(state)
                 lf = top

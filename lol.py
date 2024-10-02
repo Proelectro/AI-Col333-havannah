@@ -4,15 +4,12 @@ from typing import Tuple
 from collections import deque, defaultdict
 dim = 7
 def check_neighbours(pos1, pos2):
-    if pos1[0] == pos2[0] or pos1[1] == pos2[1]:
-        return True
-    siz = dim//2
-    if pos1 > pos2:
-        pos1, pos2 = pos2, pos1
-    if (pos1[1] < siz) ^ (pos2[1] == pos1[1] + 1):
-        return True
+    for nb in get_neighbours(dim, pos1):
+        if nb == pos2:
+            return True
     return False
-x = check_neighbours((1, 3), (2,4 ))
+
+x = check_neighbours((1, 3), (2,2 ))
 print(x)
 corners = get_all_corners(dim)
 edges = get_all_edges(dim)
