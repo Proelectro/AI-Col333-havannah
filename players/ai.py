@@ -17,26 +17,35 @@ dim = None
 BRANCH = 5
 
 def check_neighbours(pos1, pos2):
-    i, j = pos1
+    if pos1[0] == pos2[0] or pos1[1] == pos2[1]:
+        return True
     siz = dim//2
-    # neighbours = []
-    # if i > 0:
-    #     neighbours.append((i - 1, j))
-    # if i < dim - 1:
-    #     neighbours.append((i + 1, j))
-    # if j > 0:
-    #     neighbours.append((i, j - 1))
-    # if j < dim - 1:
-    #     neighbours.append((i, j + 1))
-    # if i > 0 and j <= siz and j > 0:
-    #     neighbours.append((i - 1, j - 1))
-    # if i > 0 and j >= siz and j < dim - 1:
-    #     neighbours.append((i - 1, j + 1))
-    # if j < siz and i < dim - 1:
-    #     neighbours.append((i + 1, j + 1))
-    # if j > siz and i < dim - 1:
-    #     neighbours.append((i + 1, j - 1))
-    return neighbours
+    if pos1 > pos2:
+        pos1, pos2 = pos2, pos1
+    if (pos1[1] < siz) ^ (pos2[1] + 1 == pos1[1]):
+        return True
+    return False
+
+def iscorner(pos):
+    a = [0, dim//2, dim - 1]
+    if pos[0] in a and pos[1] in a:
+        return True
+    return False
+
+def isedge(pos):
+    if iscorner(pos):
+        return False
+    if not all(pos):
+        return True
+    if pos[1] == dim - 1:
+        return True
+    if sum(pos) == dim - 1 + dim//2:
+        return True
+    if pos[0] - pos[1] == dim//2:
+        return True
+    return False
+
+
 
 def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
     if move is None:
@@ -202,7 +211,13 @@ class Node:
             'static_score': self.static_score,
             'children': [child.json() for child in self.children]
         })
-    
+    def update(self, score):
+        if self.player == 1:
+            self.score = min(self.score, score)
+        else:
+            self.score = max(self.score, score)
+        self.parent.update(score)
+        
     def expand(self, state: np.array):
         """State: After the move, the board will be in this state"""
         for move in get_valid_actions(state, 3 - self.player):
@@ -218,12 +233,8 @@ class Node:
             self.children.sort(key = lambda x: x.score)
         else:
             self.children.sort(key = lambda x: x.score, reverse=True)
-        if self.parent:
-            if self.player == 1:
-                self.parent.score = max(self.parent.score, self.score)
-            else:
-                self.parent.score = min(self.parent.score, self.score)
-            
+        self.parent.update(self.score)    
+        
 class AIPlayer:
     def __init__(self, player_number: int, timer):
         """
