@@ -134,20 +134,16 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
             for nb in get_neighbours(dim, node):
                 if state[nb] == 0:
                     ring_set.add(nb)
-        print(connected[i])
-        print(ring_set)
         priority = list(ring_set)
         while priority:
             node = priority.pop()
             if node in ring_set and not check_safe(i, node):
-                print(node)
                 ring_set.remove(node)
                 priority.extend(get_neighbours(dim, node))
     
         if ring_set:
-            print(ring_set)
             if len(ring_set) > 5:
-                ring_score[i] += 1000 - 50 * sum(1 for node in ring_set if state[node] == 0) ** 2
+                ring_score[i] += 3000 - 100 * sum(1 if state[node] == 0 else -0.5 for node in ring_set ) ** 2
     # print(" ------------------- ")
     # print(corner_list)
     # print(edges_list)
@@ -159,6 +155,7 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
         cl = len(corner_list[i])
         el = len(edges_list[i])
         score[i] -= 100
+        score[i] += ring_score[i]
         if cz >= 2 or ez >= 3:
             conn_comp = 0
             visi = set()
@@ -220,10 +217,10 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
 
     
 a = [
+    [1, 0, 0, 2, 0, 0, 0],
+    [0, 0, 0, 0, 2, 0, 0],
     [0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 1, 0, 0, 0],
-    [0, 0, 1, 0, 1, 0, 0],
-    [0, 0, 0, 1, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0, 0],
     [3, 0, 0, 0, 0, 0, 3],
     [3, 3, 0, 0, 0, 3, 3],
     [3, 3, 3, 0, 3, 3, 3]
@@ -232,4 +229,4 @@ state = np.array(a)
 
 
 
-print(static_score(state, (2, 2), 1))
+print(static_score(state, (1, 4), 1))

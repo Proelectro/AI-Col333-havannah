@@ -12,6 +12,14 @@
 3 3 3 3 3 0 3 3 3 3 3 
 Player 1 Type: ai
 Player 2 Type: human
-{"player": 1, "move": [0, 1]}
-{"player": 2, "move": [4, 4]}
-{"player": 1, "move": [0, 6]}
+{"player": 1, "move": [4, 1]}
+{"player": 2, "move": [5, 1]}
+{"player": 1, "move": [6, 2]}
+{"player": 2, "move": [5, 0]}
+{"player": 1, "move": [6, 1]}
+{"player": 2, "move": [4, 0]}
+{"player": 1, "move": [3, 0]}
+{"player": 2, "move": [5, 2]}
+{"player": 1, "move": [2, 1]}
+{"player": 2, "move": [0, 0]}
+{"player": 1, "move": [3, 2]}

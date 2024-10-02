@@ -154,7 +154,7 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
     
         if ring_set:
             if len(ring_set) > 5:
-                ring_score[i] += 3000 - 100 * sum(1 for node in ring_set if state[node] == 0) ** 2
+                ring_score[i] += 3000 - 100 * sum(1 if state[node] == 0 else -0.5 for node in ring_set ) ** 2
     # print(" ------------------- ")
     # print(corner_list)
     # print(edges_list)
@@ -250,16 +250,34 @@ class Node:
             'static_score': self.static_score,
             'children': [child.json() for child in self.children]
         })
-    def update(self, score):
-        if self.player == 1:
-            self.score = min(self.score, score)
-        else:
-            self.score = max(self.score, score)
-        if self.parent is not None:
-            self.parent.update(score)
+    def update(self, state, branch):
+        if self.score == float("inf") and self.player == 2:
+            return
+        if self.score == -float("inf") and self.player == 1:
+            return
+        if not branch:
+            return
+        new_branch = branch[1:]
+        b = branch[0]
+        
+        self.score = float("inf") if self.player == 1 else -float("inf")
+        
+        for child in self.children[:b]:    
+            new_state = deepcopy(state)
+            new_state[child.move] = child.player
+            if not child.children:
+                child.expand(new_state)
+            child.update(new_state, new_branch)
+            self.score = min(self.score, child.score) if self.player == 1 else max(self.score, child.score)
+            if self.score == float("inf") and self.player == 2:
+                break
+            if self.score == -float("inf") and self.player == 1:
+                break
         
     def expand(self, state: np.array):
         """State: After the move, the board will be in this state"""
+        if abs(self.static_score) == float("inf"):
+            return
         for move in get_valid_actions(state, 3 - self.player):
             new_state = deepcopy(state)
             new_state[move] = 3 - self.player
@@ -273,8 +291,8 @@ class Node:
             self.children.sort(key = lambda x: x.score)
         else:
             self.children.sort(key = lambda x: x.score, reverse=True)
-        if self.parent is not None:
-            self.parent.update(self.score)    
+        # if self.parent is not None:
+        #     self.parent.update(self.score)    
         
 class AIPlayer:
     def __init__(self, player_number: int, timer):
@@ -335,37 +353,35 @@ class AIPlayer:
                     break
             else:
                 self.root = Node(diff, 3 - self.player_number, 0, None, 0)
-        leaf = []
-        stack = [self.root]
-        while stack:
-            top = stack.pop()
-            if not top.children:
-                leaf.append(top)
-            else:
-                stack.extend(top.children)
-
-
-        # ------------------------------------------
-        while leaf:
-            # So your job is to choose a leaf node wisely and expand it
-            top:Node = leaf.pop()
-            
-            # and apply any condition to expand the leaf node
-            if (top.move_number - self.root.move_number) < 2 and abs(top.static_score) != float("inf"):
-                # expand the give leaf (top)
-                new_state = deepcopy(state)
-                lf = top
-                while lf != self.root:
-                    new_state[lf.move] = lf.player
-                    lf = lf.parent
-                top.expand(new_state)
-                leaf.extend(top.children)
-
-
+                
+        def perform_move(move):
+            if self.root.children:
+                for child in self.root.children:
+                    if child.move == move:
+                        self.root = child
+                        self.root.parent = None
+                        return
+        if dim == 11 and self.player_number == 1 and self.root.move_number < 4:
+            for move in [(4, 1), (6, 2), (5, 0), (6, 1)]:
+                if self.state[move] == 0:
+                    perform_move(move)
+                    return move
+                
+        
+        if not self.root.children:
+            self.root.expand(state)
+        if fetch_remaining_time(self.timer, self.player_number) < 60:
+            self.root.update(state, [])  
+        elif dim == 7:
+            self.root.update(state, [300, 300])
+        else:
+            self.root.update(state, [300])    
         # ------------------------------------------
 
-        with open("root.json", "w") as f:
-            dump(self.root.json(), f)
+        
+        
+        # with open("root.json", "w") as f:
+        #     dump(self.root.json(), f)
 
 
         if self.root.children:
