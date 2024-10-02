@@ -363,8 +363,8 @@ class AIPlayer:
                         self.root = child
                         self.root.parent = None
                         return
-        if dim == 11 and self.player_number == 1 and self.root.move_number < 4:
-            for move in [(4, 1), (6, 2), (5, 0), (6, 1)]:
+        if dim == 11 and self.root.move_number < 4:
+            for move in [(10, 5), (9, 5), (5, 10), (5, 10)][:5 - self.player_number]:
                 if self.state[move] == 0:
                     perform_move(move)
                     return move

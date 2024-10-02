@@ -10,16 +10,14 @@
 3 3 3 0 0 0 0 0 3 3 3 
 3 3 3 3 0 0 0 3 3 3 3 
 3 3 3 3 3 0 3 3 3 3 3 
-Player 1 Type: ai
-Player 2 Type: human
-{"player": 1, "move": [4, 1]}
-{"player": 2, "move": [5, 1]}
-{"player": 1, "move": [6, 2]}
-{"player": 2, "move": [5, 0]}
-{"player": 1, "move": [6, 1]}
-{"player": 2, "move": [4, 0]}
-{"player": 1, "move": [3, 0]}
-{"player": 2, "move": [5, 2]}
-{"player": 1, "move": [2, 1]}
-{"player": 2, "move": [0, 0]}
-{"player": 1, "move": [3, 2]}
+Player 1 Type: human
+Player 2 Type: ai
+{"player": 1, "move": [6, 4]}
+{"player": 2, "move": [10, 5]}
+{"player": 1, "move": [7, 5]}
+{"player": 2, "move": [9, 5]}
+{"player": 1, "move": [8, 7]}
+{"player": 2, "move": [5, 10]}
+{"player": 1, "move": "(8, 7) is invalid"}
+{"player": 2, "move": [6, 8]}
+{"player": 1, "move": [7, 7]}
