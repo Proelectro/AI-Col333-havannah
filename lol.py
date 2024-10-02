@@ -1,19 +1,19 @@
 import numpy as np
-from helper import get_neighbours, get_all_corners, get_all_edges
+from helper import get_neighbours, get_all_corners, get_all_edges, get_corner, get_edge
 from typing import Tuple
-from collections import deque
-a = [
-    [1, 0, 0, 0, 0, 0, 0],
-    [0, 2, 1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0],
-    [3, 0, 0, 0, 0, 0, 3],
-    [3, 3, 0, 0, 0, 3, 3],
-    [3, 3, 3, 0, 3, 3, 3]
-]
-state = np.array(a)
+from collections import deque, defaultdict
 dim = 7
-
+def check_neighbours(pos1, pos2):
+    if pos1[0] == pos2[0] or pos1[1] == pos2[1]:
+        return True
+    siz = dim//2
+    if pos1 > pos2:
+        pos1, pos2 = pos2, pos1
+    if (pos1[1] < siz) ^ (pos2[1] == pos1[1] + 1):
+        return True
+    return False
+x = check_neighbours((1, 3), (2,4 ))
+print(x)
 corners = get_all_corners(dim)
 edges = get_all_edges(dim)
 def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
@@ -21,7 +21,6 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
         return 0
     # if check_win(state, move, player)[0]:
     #     return float("inf") if player == 1 else -float("inf")
-    # distance = np.zeros((dim, dim))
     visited = np.zeros((dim, dim))
     indx = 0
     for check in [player, 3 - player]:
@@ -65,98 +64,175 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
             if visited[i, j] and state[i, j] in (1, 2):
                 connected[int(visited[i, j])].append((i, j))
                 owner[int(visited[i, j])] = state[i, j]
-    print(" ------------------- ")
-    print(move)
-    print(state)
-    print(connected)
-    print(owner)
-    print(" ------------------- ")
-    corner_score = [[] for _ in range(indx + 1)]
-    active = np.zeros((dim, dim))
-    for i, corner in enumerate(corners):
-        if state[corner] in (1, 2):
-            corner_score[int(visited[corner])].append(0)
-        else:
-            queue = deque([(0, corner)])
-            depth = dim + 1
-            while queue and depth > 0:
-                depth -= 1
-                d, top = queue.popleft()
-                for nb in get_neighbours(dim, top):
-                    if state[nb] in (1, 2):
-                        corner_score[int(visited[nb])].append(1 + d)
-                    elif state[nb] == 0 and active[nb] != i:
-                        active[nb] = i
-                        queue.append((d + 1, nb))
-        
-    edges_score = [[] for _ in range(indx + 1)]
-    for side in edges:
-        side_score = [0 for _ in range(indx + 1)]
-        for pp, edge in enumerate(side, start=1):
-            if state[edge] in (1, 2):
-                side_score[int(visited[edge])] = -1
-            elif state[edge] == 0:
-                for nb in get_neighbours(dim, edge):
-                    if state[nb] in (1, 2):
-                        if side_score[int(visited[nb])] != pp and side_score[int(visited[nb])] != 0:
-                            side_score[int(visited[nb])] = -1
-                        else:
-                            side_score[int(visited[nb])] = pp                     
-        for i in range(1, indx + 1):
-            if side_score[i] == -1:
-                edges_score[i].append(0)
-                
-        queue = deque()
-        for edge in side:
-            if state[edge] == 0:
-                queue.append((0, edge))
-                
-        depth = dim + 3
-        while queue and depth > 0:
-            depth -= 1
-            d, top = queue.popleft()
-            for nb in get_neighbours(dim, top):
-                if state[nb] in (1, 2):
-                    edges_score[int(visited[nb])].append(1 + d)
-                elif state[nb] == 0 and active[nb] != i:
-                    active[nb] = i
-                    queue.append((d + 1, nb))
-    
-    print(" ------------------- ")
-    print(corner_score)
-    print(edges_score)
-    print(" ------------------- ")
-
-    score = 0
+    # print(" ------------------- ")
+    # print(move)
+    # print(state)
+    # print(connected)
+    # print(owner)
+    # print(" ------------------- ")
+    corner_list = [[] for _ in range(indx + 1)]
+    edges_list = [[] for _ in range(indx + 1)]
+    score = [0] * (indx + 1)
+    ring_score = [0] * (indx + 1)
+    metagraph = defaultdict(lambda: float("inf"))
+    def check_safe(i, node):
+        for nb1 in get_neighbours(dim, node):
+            if nb1 not in ring_set:
+                continue
+            for nb2 in get_neighbours(dim, node):
+                if nb1 == nb2 or check_neighbours(nb1, nb2):
+                    continue
+                if nb2 not in ring_set:
+                    continue
+                if sum(state[q] == owner[i] for q in [node, nb1, nb2]) < 2:
+                    continue
+                return True
+        return False
     for i in range(indx + 1):
-        cs = 0
-        # if len(corner_score[i]) == 1 and corner_score[i][0] == 0:
-        #     cs = 100
-        if len(corner_score[i]) >= 2:
-            corner_score[i].sort()
-            if corner_score[i][0] == corner_score[i][1] == 0:
-                cs = 1000
-            elif corner_score[i][0] == 0:
-                cs = 30 + sum([10/x**2 for x in corner_score[i][1:]])
-            else:
-                cs = sum([10/x**2 for x in corner_score[i]])
-        es = 0
-        if len(edges_score[i]) >= 3:
-            edges_score[i].sort()
-            if edges_score[i][0] == edges_score[i][1] == edges_score[i][2] == 0:
-                es = 1000
-            elif edges_score[i][0] == edges_score[i][1] == 0:
-                es = 50 + sum([10/x**2 for x in edges_score[i][2:]])
-            elif edges_score[i][0] == 0:
-                es = 12 + sum([10/x**2 for x in edges_score[i][1:]])
-            else:
-                es = sum([10/x**2 for x in edges_score[i]])
-        # print(cs, es)
-        ts = cs + es - 70
-        score += ts if owner[i] == 1 else -ts
-    return score
+        if owner[i] == 0:
+            continue
+        visi = set()
+        virtual_edges = set()
+        done_edges = set()
+        queue = deque((0, k) for k in connected[i])
+        depth = dim
+        if dim > 10 and len(connected[i]) < 4 and indx > 4:
+            depth = 3
+        
+        while queue:
+            d, top = queue.popleft()
+            if d > depth:
+                break
+            if top in visi:
+                continue
+            visi.add(top)
+            c1 = get_corner(top, dim)
+            e1 = get_edge(top, dim)
+            if c1 != -1:
+                corner_list[i].append(d)            
+            elif e1 != -1:
+                if e1 not in done_edges:
+                    if d == 1:
+                        if e1 in virtual_edges:
+                            edges_list[i].append(0)
+                            done_edges.add(e1)
+                        else:
+                            virtual_edges.add(e1)                
+                    else:
+                        edges_list[i].append(d)
+                        done_edges.add(e1)
+            
+            elif visited[top] != i and state[top] == owner[i]:
+                metagraph[(visited[top], i)] = min(metagraph[(visited[top], i)], d)
+                
+            for nb in get_neighbours(dim, top):
+                if nb in visi:
+                    continue
+                if state[nb] != 3 - owner[i]:
+                    queue.append((d+1, nb))
     
+        ring_set = set()
+        for node in connected[i]:
+            ring_set.add(node)
+            for nb in get_neighbours(dim, node):
+                if state[nb] == 0:
+                    ring_set.add(nb)
+        print(connected[i])
+        print(ring_set)
+        priority = list(ring_set)
+        while priority:
+            node = priority.pop()
+            if node in ring_set and not check_safe(i, node):
+                print(node)
+                ring_set.remove(node)
+                priority.extend(get_neighbours(dim, node))
     
+        if ring_set:
+            print(ring_set)
+            if len(ring_set) > 5:
+                ring_score[i] += 1000 - 50 * sum(1 for node in ring_set if state[node] == 0) ** 2
+    # print(" ------------------- ")
+    # print(corner_list)
+    # print(edges_list)
+    # print(" ------------------- ")
+
+    for i in range(indx + 1):
+        cz = corner_list[i].count(0)
+        ez = edges_list[i].count(0)
+        cl = len(corner_list[i])
+        el = len(edges_list[i])
+        score[i] -= 100
+        if cz >= 2 or ez >= 3:
+            conn_comp = 0
+            visi = set()
+            for node in connected[i]:
+                if node in visi:
+                    continue
+                stack = [node]
+                conn_comp += 1
+                while stack:
+                    top = stack.pop()
+                    for nb in get_neighbours(dim, top):
+                        if nb in visi:
+                            continue
+                        if state[nb] == owner[i]:
+                            stack.append(nb)
+                            visi.add(nb)
+            score[i] += 3000 - 200 * conn_comp         
+            continue
+        if cl == 1 and cz == 1:
+            score[i] += 100
+        
+        if cl >= 2:
+            if cz == 1:
+                score[i] += 400 / min(k for k in corner_list[i] if k)
+                for j in corner_list[i]:
+                    if j > 0:
+                        score[i] += 200 / j**2
+            else:
+                for j in corner_list[i]:
+                    if j > 0:
+                        score[i] += 50 / j**2
+        if el >= 3:
+            if ez == 2:
+                score[i] += 700 / min(k for k in edges_list[i] if k)
+                for j in edges_list[i]:
+                    if j > 0:
+                        score[i] += 300 / j**2
+            elif ez == 1:
+                score[i] += 200 / min(k for k in edges_list[i] if k)
+                for j in edges_list[i]:
+                    if j > 0:
+                        score[i] += 50 / j**2
+            else:
+                for j in edges_list[i]:
+                    if j > 0:
+                        score[i] += 30 / j**2
+    total = 0
+    for i in range(indx + 1):
+        if owner[i] == 0:
+            continue
+        # print(owner[i], score[i])
+        total += score[i] if owner[i] == 1 else -score[i]
+    
+    for i, j in metagraph:
+        p = (50 / metagraph[(i, j)])
+        total += p * (1 if owner[int(i)] == 1 else -1)
+    
+    return total
+
+    
+a = [
+    [0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 1, 0, 0, 0],
+    [0, 0, 1, 0, 1, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0],
+    [3, 0, 0, 0, 0, 0, 3],
+    [3, 3, 0, 0, 0, 3, 3],
+    [3, 3, 3, 0, 3, 3, 3]
+]
+state = np.array(a)
 
 
-print(static_score(state, (1, 2), 1))
+
+print(static_score(state, (2, 2), 1))
