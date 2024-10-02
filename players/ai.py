@@ -345,15 +345,17 @@ class AIPlayer:
                     diff = move
                     break
             self.state = state
-            assert diff is not None
-            for child in self.root.children:
-                if child.move == diff:
-                    self.root = child
-                    self.root.parent = None
-                    break
+            # assert diff is not None
+            if diff:
+                for child in self.root.children:
+                    if child.move == diff:
+                        self.root = child
+                        self.root.parent = None
+                        break
+                else:
+                    self.root = Node(diff, 3 - self.player_number, 0, None, 0)
             else:
-                self.root = Node(diff, 3 - self.player_number, 0, None, 0)
-                
+                self.root = Node(None, 3 - self.player_number, 0, None, 0)
         def perform_move(move):
             if self.root.children:
                 for child in self.root.children:
