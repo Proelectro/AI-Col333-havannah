@@ -15,44 +15,71 @@ corners = None
 edges = None
 dim = None
 BRANCH = 5
+
+def check_neighbours(pos1, pos2):
+    i, j = pos1
+    siz = dim//2
+    # neighbours = []
+    # if i > 0:
+    #     neighbours.append((i - 1, j))
+    # if i < dim - 1:
+    #     neighbours.append((i + 1, j))
+    # if j > 0:
+    #     neighbours.append((i, j - 1))
+    # if j < dim - 1:
+    #     neighbours.append((i, j + 1))
+    # if i > 0 and j <= siz and j > 0:
+    #     neighbours.append((i - 1, j - 1))
+    # if i > 0 and j >= siz and j < dim - 1:
+    #     neighbours.append((i - 1, j + 1))
+    # if j < siz and i < dim - 1:
+    #     neighbours.append((i + 1, j + 1))
+    # if j > siz and i < dim - 1:
+    #     neighbours.append((i + 1, j - 1))
+    return neighbours
+
 def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
     if move is None:
         return 0
     if check_win(state, move, player)[0]:
         return float("inf") if player == 1 else -float("inf")
-    # distance = np.zeros((dim, dim))
+    distance = np.zeros((dim, dim))
     visited = np.zeros((dim, dim))
     indx = 0
-    for i in range(dim):   
-        for j in range(dim):
-            if state[i, j] == 3 or state[i, j] == 0 or visited[i, j]:
-                continue
-            indx += 1
-            visited[i, j] = indx
-            stack = [(i, j)]
-            single = set()
-            while stack:
-                top = stack.pop()
-                for nb in get_neighbours(dim, top):
-                    if state[nb] == 3 or visited[nb] == indx:
-                        continue
-                    if state[top] == 0 and state[nb] == state[i, j]:
-                        if nb in single or (visited[nb] != indx and 3 - player == state[nb]):
-                            visited[nb] = indx
-                            stack.append(nb)
+    for check in [player, 3 - player]:
+        for i in range(dim):   
+            for j in range(dim):
+                if state[i, j] != check or visited[i, j]:
+                    continue
+                indx += 1
+                visited[i, j] = indx
+                stack = [(i, j)]
+                single = set()
+                while stack:
+                    top = stack.pop()
+                    for nb in get_neighbours(dim, top):
+                        if state[nb] == 3 or visited[nb] == indx:
+                            continue
+                        if state[top] == 0 and state[nb] == state[i, j]:
                             if nb in single:
+                                visited[nb] = indx
+                                stack.append(nb)
                                 single.remove(nb)
-                        elif visited[nb] != indx:
-                            single.add(nb)
-                    elif state[top] == state[i, j]:
-                        if visited[nb] != indx:
-                            if state[nb] == 0:
-                                visited[nb] = indx
-                                stack.append(nb)
-                            elif state[nb] == state[i, j]:
-                                visited[nb] = indx
-                                stack.append(nb)
-
+                            elif visited[nb] != indx:
+                                single.add(nb)
+                        elif state[top] == state[i, j]:
+                            if visited[nb] != indx:
+                                if state[nb] == 0:
+                                    visited[nb] = indx
+                                    stack.append(nb)
+                                elif state[nb] == state[i, j]:
+                                    visited[nb] = indx
+                                    stack.append(nb)
+        if player == check:
+            indx_move = visited[move]
+            state[move] = 0
+    state[move] = player
+    visited[move] = indx_move
     connected = [[] for _ in range(indx + 1)]
     owner = [0 for _ in range(indx + 1)]
     for i in range(dim):
@@ -187,6 +214,10 @@ class Node:
                 self.score = min(self.score, score)
             else:
                 self.score = max(self.score, score)
+        if self.player == 1:
+            self.children.sort(key = lambda x: x.score)
+        else:
+            self.children.sort(key = lambda x: x.score, reverse=True)
         if self.parent:
             if self.player == 1:
                 self.parent.score = max(self.parent.score, self.score)
@@ -261,9 +292,15 @@ class AIPlayer:
             else:
                 stack.extend(top.children)
 
+
+        # ------------------------------------------
         while leaf:
+            # So your job is to choose a leaf node wisely and expand it
             top:Node = leaf.pop()
-            if (top.move_number - self.root.move_number) < 2:
+            
+            # and apply any condition to expand the leaf node
+            if (top.move_number - self.root.move_number) < 2 and abs(top.static_score) != float("inf"):
+                # expand the give leaf (top)
                 new_state = deepcopy(state)
                 lf = top
                 while lf != self.root:
@@ -272,6 +309,8 @@ class AIPlayer:
                 top.expand(new_state)
                 leaf.extend(top.children)
 
+
+        # ------------------------------------------
 
         with open("root.json", "w") as f:
             dump(self.root.json(), f)

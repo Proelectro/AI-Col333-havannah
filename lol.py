@@ -3,9 +3,9 @@ from helper import get_neighbours, get_all_corners, get_all_edges
 from typing import Tuple
 from collections import deque
 a = [
-    [0, 0, 0, 0, 0, 0, 0],
     [1, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0],
+    [0, 2, 1, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0],
     [3, 0, 0, 0, 0, 0, 3],
     [3, 3, 0, 0, 0, 3, 3],
@@ -21,38 +21,43 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
         return 0
     # if check_win(state, move, player)[0]:
     #     return float("inf") if player == 1 else -float("inf")
-    distance = np.zeros((dim, dim))
+    # distance = np.zeros((dim, dim))
     visited = np.zeros((dim, dim))
     indx = 0
-    for i in range(dim):   
-        for j in range(dim):
-            if state[i, j] == 3 or state[i, j] == 0 or visited[i, j]:
-                continue
-            indx += 1
-            visited[i, j] = indx
-            stack = [(i, j)]
-            single = set()
-            while stack:
-                top = stack.pop()
-                for nb in get_neighbours(dim, top):
-                    if state[nb] == 3 or visited[nb] == indx:
-                        continue
-                    if state[top] == 0 and state[nb] == state[i, j]:
-                        if nb in single:
-                            visited[nb] = indx
-                            stack.append(nb)
-                            single.remove(nb)
-                        elif visited[nb] != indx:
-                            single.add(nb)
-                    elif state[top] == state[i, j]:
-                        if visited[nb] != indx:
-                            if state[nb] == 0:
+    for check in [player, 3 - player]:
+        for i in range(dim):   
+            for j in range(dim):
+                if state[i, j] != check or visited[i, j]:
+                    continue
+                indx += 1
+                visited[i, j] = indx
+                stack = [(i, j)]
+                single = set()
+                while stack:
+                    top = stack.pop()
+                    for nb in get_neighbours(dim, top):
+                        if state[nb] == 3 or visited[nb] == indx:
+                            continue
+                        if state[top] == 0 and state[nb] == state[i, j]:
+                            if nb in single:
                                 visited[nb] = indx
                                 stack.append(nb)
-                            elif state[nb] == state[i, j]:
-                                visited[nb] = indx
-                                stack.append(nb)
-
+                                single.remove(nb)
+                            elif visited[nb] != indx:
+                                single.add(nb)
+                        elif state[top] == state[i, j]:
+                            if visited[nb] != indx:
+                                if state[nb] == 0:
+                                    visited[nb] = indx
+                                    stack.append(nb)
+                                elif state[nb] == state[i, j]:
+                                    visited[nb] = indx
+                                    stack.append(nb)
+        if player == check:
+            indx_move = visited[move]
+            state[move] = 0
+    state[move] = player
+    visited[move] = indx_move
     connected = [[] for _ in range(indx + 1)]
     owner = [0 for _ in range(indx + 1)]
     for i in range(dim):
@@ -60,12 +65,12 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
             if visited[i, j] and state[i, j] in (1, 2):
                 connected[int(visited[i, j])].append((i, j))
                 owner[int(visited[i, j])] = state[i, j]
-    # print(" ------------------- ")
-    # print(move)
-    # print(state)
-    # print(connected)
-    # print(owner)
-    # print(" ------------------- ")
+    print(" ------------------- ")
+    print(move)
+    print(state)
+    print(connected)
+    print(owner)
+    print(" ------------------- ")
     corner_score = [[] for _ in range(indx + 1)]
     active = np.zeros((dim, dim))
     for i, corner in enumerate(corners):
@@ -73,7 +78,7 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
             corner_score[int(visited[corner])].append(0)
         else:
             queue = deque([(0, corner)])
-            depth = dim
+            depth = dim + 1
             while queue and depth > 0:
                 depth -= 1
                 d, top = queue.popleft()
@@ -117,22 +122,22 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
                     active[nb] = i
                     queue.append((d + 1, nb))
     
-    # print(" ------------------- ")
-    # print(corner_score)
-    # print(edges_score)
-    # print(" ------------------- ")
+    print(" ------------------- ")
+    print(corner_score)
+    print(edges_score)
+    print(" ------------------- ")
 
     score = 0
     for i in range(indx + 1):
         cs = 0
-        if len(corner_score[i]) == 1 and corner_score[i][0] == 0:
-            cs = 100
+        # if len(corner_score[i]) == 1 and corner_score[i][0] == 0:
+        #     cs = 100
         if len(corner_score[i]) >= 2:
             corner_score[i].sort()
             if corner_score[i][0] == corner_score[i][1] == 0:
                 cs = 1000
             elif corner_score[i][0] == 0:
-                cs = 300 + sum([10/x**2 for x in corner_score[i][1:]])
+                cs = 30 + sum([10/x**2 for x in corner_score[i][1:]])
             else:
                 cs = sum([10/x**2 for x in corner_score[i]])
         es = 0
@@ -141,18 +146,17 @@ def static_score(state: np.array, move: Tuple[int, int], player: int) -> float:
             if edges_score[i][0] == edges_score[i][1] == edges_score[i][2] == 0:
                 es = 1000
             elif edges_score[i][0] == edges_score[i][1] == 0:
-                es = 500 + sum([10/x**2 for x in edges_score[i][2:]])
+                es = 50 + sum([10/x**2 for x in edges_score[i][2:]])
             elif edges_score[i][0] == 0:
-                es = 50 + sum([10/x**2 for x in edges_score[i][1:]])
+                es = 12 + sum([10/x**2 for x in edges_score[i][1:]])
             else:
                 es = sum([10/x**2 for x in edges_score[i]])
-        print(cs, es)
-        ts = cs + es
+        # print(cs, es)
+        ts = cs + es - 70
         score += ts if owner[i] == 1 else -ts
     return score
-
     
     
 
 
-static_score(state, (1, 0), 2)
+print(static_score(state, (1, 2), 1))

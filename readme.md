@@ -7,7 +7,7 @@ First install conda in your machine if not already present. Then run
 in your terminal to create the conda environment `aia2` with required packages. Do not install any other package in this environment as we will run your code with just these packages. You need to create the conda environment just once. 
 
 Second time onwards, just activate the environment using the command
-    
+    source ~/miniconda3/etc/profile.d/conda.sh
     conda activate aia2
 
 and run the game command.
