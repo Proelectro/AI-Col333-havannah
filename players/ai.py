@@ -216,7 +216,8 @@ class Node:
             self.score = min(self.score, score)
         else:
             self.score = max(self.score, score)
-        self.parent.update(score)
+        if self.parent is not None:
+            self.parent.update(score)
         
     def expand(self, state: np.array):
         """State: After the move, the board will be in this state"""
@@ -233,7 +234,8 @@ class Node:
             self.children.sort(key = lambda x: x.score)
         else:
             self.children.sort(key = lambda x: x.score, reverse=True)
-        self.parent.update(self.score)    
+        if self.parent is not None:
+            self.parent.update(self.score)    
         
 class AIPlayer:
     def __init__(self, player_number: int, timer):
